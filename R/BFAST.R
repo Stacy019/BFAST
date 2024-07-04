@@ -92,6 +92,46 @@ ICMEM <- function(Y, x_int, Adj, A_int, mu0_int, W_int, mu_int, sigma_int, lambd
 }
 
 #' @export
+# get the optimal number of latent embeddings
+selectFacNumber <- function(X, qmax=15){
+  mnlamjFun <- function(eigvals, j){
+    p <- length(eigvals)
+    lamj <- eigvals[j]
+    Sum <- 0
+    for(l in (j+1):p){
+      Sum <- Sum + 1/(eigvals[l] - lamj)
+    }
+    res <- Sum + 1/ ((3*lamj + eigvals[j+1])/4 - lamj)
+    return(res/(p-j))
+  }
+  mtnlamjFun <- function(n, eigvals, j){
+    p <- length(eigvals)
+    rhojn <-  (p-j)/(n-1)
+    res <- -(1-rhojn)/ eigvals[j] + rhojn * mnlamjFun(eigvals, j)
+    return(res)
+  }
+  n <- nrow(X)
+  p <- ncol(X)
+  corMat <- cor(X)
+  evalues <- eigen(corMat)$values
+  hq1 <- sum(evalues>1+sqrt(p/(n-1)))
+  if(hq1 < 15){
+    hq <- hq1
+  }else{ # ajdust the eigvalues
+    adj.eigvals <- sapply(1:(p-1), function(j) -1/mtnlamjFun(n, evalues, j))
+    hq <- sum(adj.eigvals >1) # overselect
+  }
+  if(hq > qmax || hq < 5) hq <- qmax
+
+  propvar <- sum(evalues[1:hq]) / sum(evalues)
+  res <- list()
+  res$q <- hq
+  res$propvar <- sum(evalues[1:hq]) / sum(evalues)
+
+  return(res)
+}
+                          
+#' @export
 # get the simulation data in ST platform
 gendata_RNAExp <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
                            G=4, decay_coef=0.5, tau=8,sigma2=1, seed=1, view=FALSE){
