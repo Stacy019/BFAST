@@ -3,6 +3,9 @@ Jointly performing dimension reduction and spatial clustering with Bayesian Fact
 
 # Installation
 To install the packages "BFAST", firstly, install the "devtools" package. Besides, "BFAST" depends on the "Rcpp" and "RcppArmadillo" package, which also requires appropriate setting of Rtools and Xcode for Windows and Mac OS/X, respectively.
+
 install.packages("devtools")
+
 library(devtools)
+
 install_github("Stacy019/BFAST")
