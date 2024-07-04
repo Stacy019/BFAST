@@ -297,22 +297,8 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
 # library(mclust)
 # library(psych)
 # library(SingleCellExperiment)
-#  cellID=colnames(Data1)[grep("645072",colnames(Data1))]
-#  Data=subset(Data1,subset=CellID%in%cellID)
-#  Data=NormalizeData(Data)
-#  Data=ScaleData(Data)
-#  Data=SCTransform(Data)
-#  Data=FindVariableFeatures(Data,nfeatures = 200)
-#  data.sce=as.SingleCellExperiment(DietSeurat(Data))
-#  spot_x=as.numeric(get.strsplit(colnames(Data@assays$RNA@data),"_",5:6)[,1])
-#  spot_y=as.numeric(get.strsplit(colnames(Data@assays$RNA@data),"_",5:6)[,2])
-#  data.sce@colData@listData$row=spot_x
-#  data.sce@colData@listData$col=spot_y
-#  Adj=find_neighbors2(data.sce,platform="ST")
-#  Data=subset(Data,features=VariableFeatures(Data)[1:200])
-#
-#
-# data=gendata_RNAExp(20,20)
+
+# data=gendata(20,20)
 # data.sce=Seurat::as.SingleCellExperiment(Seurat::DietSeurat(data))
 # spot_x=data@meta.data$row
 # spot_y=data@meta.data$col
@@ -325,7 +311,4 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
 # y=t(as.matrix(data@assays$RNA@data))
 # out=InitalPara(y,K,D)
 # res=BFAST::ICMEM(y,out$x_int,Adj,out$A_int,out$mu0_int,diag(as.vector(out$W_int)),out$mu_int,out$sigma_int,lambda_grid=seq(0.5,1,0.1),alpha=rep(0,K),beta_grid=seq(0,1,0.1), maxIter_ICM=10, maxIter=50)
-#
 
-#Idents(Data1)=res$x
-#FindAllMarkers(Data1, only.pos=TRUE, min.pc=0.25)
