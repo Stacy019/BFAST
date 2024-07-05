@@ -97,8 +97,6 @@ sp_mat get_spNbs(ivec x, const sp_mat& Adj) {
   // Calculate number of nonzero points
   //int n = std::distance(start, end);
   int n = Adj.n_nonzero;
-  //cout << "n=" << n << endl;
-  //cout << "n=" << Adj.n_nonzero << endl;
 
   sp_mat spNbs(x.n_elem, x.n_elem);    //neiborhood state matrix, matched with Adj.
 
@@ -299,7 +297,6 @@ Rcpp::List runICM_sp(const arma::mat& Y, arma::mat& A, arma::vec& mu0, arma::mat
 
     if (Energy(iter-1) - Energy(iter) < 1e-5)
     {
-      cout << "ICM Converged at Iteration = " << iter  << endl;
       break;
     }
   }
@@ -504,7 +501,6 @@ Rcpp::List ICMEM( const arma::mat& Y,const arma::ivec& x_int, const arma::sp_mat
 
     // ICM, List;
     // update x and pxgn
-    cout<<"ICM"<<endl;
     List fitICM = runICM_sp(Y, A, mu0, W, x, mu, sigma, Adj, alpha, beta, lambda, maxIter_ICM);
     ivec xHat = fitICM["x"];
     x = xHat;
