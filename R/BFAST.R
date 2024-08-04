@@ -130,119 +130,13 @@ selectFacNumber <- function(X, qmax=15){
 
   return(res)
 }
-                          
+                        
 #' @export
-# get the simulation data in ST platform
-gendata_RNAExp <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
-                           G=4, decay_coef=0.5, tau=8,sigma2=1, seed=1, view=FALSE){
+gendata <- function(height=30, width=30, platform="ST", p =100, D=15, K=5, method="exp",
+                    G=4, decay_coef=0.2, range_from_value=0.2, sigma2=1, seed=1, view=FALSE){
 
   if(D <2) stop("error:gendata_sp::D must be greater than 2!")
 
-  #require(GiRaF)
-  #require(MASS)
-  n <- height * width # # of cell in each indviduals
-
-  if(platform=="ST"){
-    beta = 1
-  }else if(platform=='scRNAseq'){
-    beta = 0
-  }
-  ## generate deterministic parameters, fixed after generation
-
-  W <- sigma2*abs(rnorm(p, sd=1))
-  A <- matrix(rnorm(p*D), p, D)
-  A <- qr.Q(qr(A))
-  mu <- matrix(0, D, K)
-  diagmat = array(0, dim = c(D, D, K))
-
-  if(D > K){
-    q1 <- floor(K/2)
-    for(j in 1:q1){
-      if(j <= (q1/2)) mu[j,j] <- tau
-      if(j > (q1/2)) mu[j,j] <- -tau
-    }
-    mu[(q1+1):D, K] <- -tau
-
-  }else if(D <= K){
-    for(k in 1:K)
-      mu[,k] <- rep(tau/8 *k, D) #
-  }
-  for(k in 1:K){
-    tmp  <- rep(1,D)
-    if(k <= K/2){
-      tmp[D] <- tau
-    }
-    diag(diagmat[,,k]) <- tmp
-  }
-
-  Mu <- t(mu)
-  Sigma <- diagmat
-  # set.seed(seed)
-  # generate the spatial dependence for state variable x, a hidden Markov RF
-  x <- GiRaF::sampler.mrf(iter = n, sampler = "Gibbs", h = height, w = width, ncolors = K, nei = G, param = beta,
-                   initialise = FALSE, view = view)
-  x <- c(x) + 1
-
-  Z <- matrix(0, n, D)
-
-  for(k in 1:K){
-    nk <- sum(x==k)
-    Z[x==k, ] <- MASS::mvrnorm(nk, Mu[k,], Sigma[,,k])
-  }
-  Ez <- colMeans(Z)
-  Mu <- Mu - matrix(Ez, K, D, byrow=T) # center Z
-  Y <- Z %*% t(A) + MASS::mvrnorm(n, mu=rep(0,p), Sigma=diag(W))
-
-  Y[Y < 0] = 0
-  rand_matrix = matrix(runif(n*p),n,p)
-  print(dim(rand_matrix))
-  cutoff = exp(-decay_coef*(Y^2))
-  print(dim(cutoff))
-  zero_mask = rand_matrix < cutoff
-  Y[zero_mask] = 0
-
-  # make position
-  pos <- cbind(rep(1:height, width), rep(1:height, each=width))
-
-  counts <- t(Y)
-  p <- ncol(Y)
-  n <- nrow(Y)
-  rownames(counts) <- paste0("gene", seq_len(p))
-  colnames(counts) <- paste0("spot", seq_len(n))
-  counts <- as.data.frame(exp(counts)-1)
-  ## Make array coordinates - filled rectangle
-
-  if(platform=="ST"){
-    cdata <- list()
-    cdata$row <- pos[,1]
-    cdata$col <- pos[,2]
-    cdata <- as.data.frame(do.call(cbind, cdata))
-    cdata$imagerow <- cdata$row
-    cdata$imagecol <- cdata$col
-    row.names(cdata) <- colnames(counts)
-
-    #library(Seurat)
-    ## Make SCE
-    seu <-  Seurat::CreateSeuratObject(counts= counts, meta.data=cdata) #
-  }else if(platform=='scRNAseq'){
-    # library(Seurat)
-    ## Make SCE
-    seu <-  Seurat::CreateSeuratObject(counts= counts)
-  }else{
-    stop("gendata_RNAExp: Unsupported platform \"", platform, "\".")
-  }
-
-  seu$true_clusters <- x
-  return(seu)
-}
-
-#' @export
-gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
-                           G=4, decay_coef=0.5, range_from_value=0.2, tau=8,sigma2=1, seed=1, view=FALSE){
-
-  if(D <2) stop("error:gendata_sp::D must be greater than 2!")
-
-  #require(GiRaF)
   #require(MASS)
   n <- height * width # # of cell in each indviduals
 
@@ -259,7 +153,7 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
   diagmat = array(0, dim = c(D, D, K))
 
   for(k in 1:K){
-    mu[,k]=rnorm(D)+0.5*k
+    mu[,k]=rnorm(D)
     diag(diagmat[,,k])=abs(rnorm(D))
   }
 
@@ -279,7 +173,7 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
   }
 
   mu = rep(0,p)
-  mu = range_from_value*runif(p)+(1-range_from_value)
+  mu = 2*range_from_value*runif(p)+(1-range_from_value)
   W <- sigma2*abs(rnorm(p, sd=1))
   noise = matrix(0,n,p)
 
@@ -287,12 +181,17 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
     noise[,j] = mu[j] + rnorm(n,0,W[j])
 
   Y = Z%*%t(A) + noise
-
   Y[Y < 0] = 0
+
   rand_matrix = matrix(runif(n*p),n,p)
-  print(dim(rand_matrix))
-  cutoff = exp(-decay_coef*(Y^2))
-  print(dim(cutoff))
+  if(method=="exp"){
+    cutoff = exp(-decay_coef*(Y^2))
+  }
+  if(method=="linear"){
+    cutoff = 1-decay_coef*Y
+    cutoff[cutoff<0]=0
+    cutoff[cutoff>1]=1
+  }
   zero_mask = rand_matrix < cutoff
   Y[zero_mask] = 0
 
@@ -304,9 +203,9 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
   n <- nrow(Y)
   rownames(counts) <- paste0("gene", seq_len(p))
   colnames(counts) <- paste0("spot", seq_len(n))
-  counts <- as.data.frame(exp(counts)-1)
-  ## Make array coordinates - filled rectangle
+  counts=as.matrix(exp(counts)-1)
 
+  ## Make array coordinates - filled rectangle
   if(platform=="ST"){
     cdata <- list()
     cdata$row <- pos[,1]
@@ -326,9 +225,9 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
   }else{
     stop("gendata_RNAExp: Unsupported platform \"", platform, "\".")
   }
-
+    
   seu$true_clusters <- x
-  return(list(data=seu,A=A,Mu=Mu,Sigma=Sigma,mu=mu,W=W))
+  return(list(data=seu,Y=Y,Z=Z,A=A,Mu=Mu,Sigma=Sigma,mu=mu,W=W,x=x))
 }
 
 # #testdata
@@ -338,7 +237,8 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
 # library(psych)
 # library(SingleCellExperiment)
 
-# data=gendata(20,20)
+# a=gendata(decay_coef=0.2)
+# data=a$data
 # data.sce=Seurat::as.SingleCellExperiment(Seurat::DietSeurat(data))
 # spot_x=data@meta.data$row
 # spot_y=data@meta.data$col
@@ -348,7 +248,7 @@ gendata <- function(height=30, width=30, platform="ST", p =100, D=10, K=5,
 #
 # D=15
 # K=5
-# y=t(as.matrix(data@assays$RNA@data))
+# y=scale(a$Y,center=F)
 # out=InitalPara(y,K,D)
 # res=BFAST::ICMEM(y,out$x_int,Adj,out$A_int,out$mu0_int,diag(as.vector(out$W_int)),out$mu_int,out$sigma_int,lambda_grid=seq(0.5,1,0.1),alpha=rep(0,K),beta_grid=seq(0,1,0.1), maxIter_ICM=10, maxIter=50)
 
