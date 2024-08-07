@@ -11,19 +11,5 @@ library(devtools)
 install_github("Stacy019/BFAST")
 
 # Usage
-Take the STARmap data as example, 
+Take the STARmap data as example, check the vignettes directory of the repo.
 
-load("starmap_mpfc.RData")
-data=starmap_cnts[[1]]
-Data=CreateSeuratObject(data,min.cells=3)
-Data=NormalizeData(Data)
-Data=SCTransform(Data)
-
-spot_x=starmap_info[[1]]$x
-spot_y=starmap_info[[1]]$y
-Adj=getneighborhood_fast(cbind(spot_x,spot_y),300)
-
-y=t(as.matrix(Data@assays$SCT@data))
-y=scale(y,center=F)
-out=InitalPara(y,K=15,q=15,int.model = "EEE")
-res=BFAST::ICMEM(y,out$x_int,Adj,out$A_int,out$mu0_int,diag(as.vector(out$W_int)),out$mu_int,out$sigma_int,lambda_grid=seq(0,2,0.2),alpha=rep(0,K),beta_grid=seq(0,4,0.2), maxIter_ICM=10, maxIter=50)
