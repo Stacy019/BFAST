@@ -132,7 +132,7 @@ selectFacNumber <- function(X, qmax=15){
 }
                         
 #' @export
-gendata <- function(height=30, width=30, platform="ST", p =100, D=15, K=5, method="exp",
+gendata <- function(height=60, width=60, platform="ST", p =100, D=15, K=5, method="exp",
                     G=4, decay_coef=0.2, range_from_value=0.2, sigma2=1, seed=1, view=FALSE){
 
   if(D <2) stop("error:gendata_sp::D must be greater than 2!")
