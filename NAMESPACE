@@ -3,7 +3,6 @@
 export(ICMEM)
 export(InitalPara)
 export(gendata)
-export(gendata_RNAExp)
 export(getneighborhood_fast)
 export(wpcaCpp)
 importFrom(Rcpp,sourceCpp)
